@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Headz-up · print</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* Print layout: each route renders as one "page" stacked vertically */
+    html, body { margin: 0; padding: 0; background: #fff; }
+    .print-page {
+      width: 1280px;
+      margin: 0 auto;
+      break-after: page;
+      page-break-after: always;
+      overflow: hidden;
+    }
+    .print-page:last-child {
+      break-after: auto;
+      page-break-after: auto;
+    }
+    .print-label {
+      font-family: "DM Sans", sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #999;
+      padding: 12px 24px 0;
+    }
+    /* Hide hover-only & interactive chrome that doesn't print well */
+    .pc-thumb:hover > * { transform: none !important; box-shadow: none !important; }
+
+    @page { size: A3 portrait; margin: 8mm; }
+    @media print {
+      html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .print-page {
+        width: 100%;
+        page-break-after: always;
+        break-after: page;
+      }
+      .print-label { display: none; }
+      /* Disable all transitions/animations during print */
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="print-root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="data.js"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="page-home.jsx"></script>
+  <script type="text/babel" src="page-onas.jsx"></script>
+  <script type="text/babel" src="page-projekty.jsx"></script>
+  <script type="text/babel" src="page-detail.jsx"></script>
+  <script type="text/babel" src="page-kontakt.jsx"></script>
+
+  <script type="text/babel" data-presets="env,react">
+    const { NavBar, Footer } = window.UI;
+    const navigate = () => {}; // no-op for print
+
+    const Page = ({ label, children }) => (
+      <div className="print-page">
+        <div className="print-label">{label}</div>
+        <NavBar route="/" navigate={navigate} transparentOver={false} />
+        <main>{children}</main>
+        <Footer navigate={navigate} />
+      </div>
+    );
+
+    function PrintAll() {
+      return (
+        <>
+          <Page label="01 Homepage">
+            <window.Home navigate={navigate} />
+          </Page>
+          <Page label="02 O nás">
+            <window.ONas navigate={navigate} />
+          </Page>
+          <Page label="03 Projekty">
+            <window.Projekty navigate={navigate} />
+          </Page>
+          <Page label="04 Detail projektu">
+            <window.ProjectDetail slug={window.PROJECTS.find(p => p.hasDetail).slug} navigate={navigate} />
+          </Page>
+          <Page label="05 Kontakt">
+            <window.Kontakt navigate={navigate} />
+          </Page>
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("print-root"));
+    root.render(<PrintAll />);
+
+    // Auto-print after fonts + render settle
+    (async () => {
+      try {
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+      } catch (e) {}
+      // Wait for React render + images
+      await new Promise(r => setTimeout(r, 800));
+      window.print();
+    })();
+  </script>
+</body>
+</html>
